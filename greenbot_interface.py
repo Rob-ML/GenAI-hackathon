@@ -1,9 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install imageio diffusers opencv-python
-
-# COMMAND ----------
-
-# MAGIC %pip install databricks-genai-inference databricks-vectorsearch 
+# MAGIC %pip install imageio diffusers opencv-python databricks-genai-inference databricks-vectorsearch 
 # MAGIC dbutils.library.restartPython() 
 # MAGIC
 
