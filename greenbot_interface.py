@@ -1,10 +1,11 @@
 # Databricks notebook source
-# MAGIC %pip install imageio diffusers opencv-python databricks-genai-inference databricks-vectorsearch 
+# MAGIC %pip install imageio diffusers opencv-python databricks-genai-inference databricks-vectorsearch torch
 # MAGIC dbutils.library.restartPython() 
 # MAGIC
 
 # COMMAND ----------
 
+dbutils.widgets.text("Prompt", defaultValue="How can nuclear fission be used to power data centers?")
 query = dbutils.widgets.get("Prompt")
 
 # COMMAND ----------
@@ -50,8 +51,8 @@ chat = ChatSession(model="databricks-meta-llama-3-70b-instruct",
 
 # reset history
 chat = ChatSession(model="databricks-meta-llama-3-70b-instruct",
-                   system_message="You are a helpful assistant. Answer the user's question based on the provided context. Explain it in a very simple terms, use analogies if relevant. The goal of the output is to provide a script for a short video. Your answer needs to be very short when it is complete, it needs to be less that 80 words",
-                   max_tokens=80)
+                   system_message="You are a helpful assistant. Answer the user's question based on the provided context. Explain it in a very simple terms, use analogies if relevant",
+                   max_tokens=512)
 
 # get context from vector search
 raw_context = index.similarity_search(columns=["text"],
@@ -70,6 +71,10 @@ first_step_output = chat.last
 
 # COMMAND ----------
 
+first_step_output
+
+# COMMAND ----------
+
 # reset history
 chat = ChatSession(model="databricks-meta-llama-3-70b-instruct",
                    system_message="You are an expert visualiser. The goal of the output is to provide a prompt for a video generation engine. The prompt should be extremely simple, understandable even by children, no matter how complex the topic is short - less than 80 tokens. Skip any intro like Here is a simplified prompt for a video generation engine or similar, jump straight to the description.",
@@ -77,7 +82,6 @@ chat = ChatSession(model="databricks-meta-llama-3-70b-instruct",
 
 chat.reply(f"Please simplify this text to create a video prompt: {first_step_output}. Imagine you were prompting to draw a nice picture representing the text that we want to simplify.")
 final_prompt = chat.last
-
 
 # COMMAND ----------
 
@@ -91,7 +95,6 @@ pipe.enable_model_cpu_offload()
 # memory optimization
 pipe.enable_vae_slicing()
 
-prompt = chat.last
 video_frames = pipe(final_prompt, num_frames=64).frames[0]
 video_path = export_to_video(video_frames)
 video_path
